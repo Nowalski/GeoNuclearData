@@ -1,4 +1,11 @@
-# Changelog
+﻿# Changelog
+
+## 0.18.0 (2026-03-27)
+
+ - refreshed the dataset from the World Nuclear Association Nuclear Power Plant Explorer and public reactor detail pages;
+ - added `scripts/update_from_wna.py` to keep the fork self-maintained;
+ - added `display_name`, `plant_name`, `operator`, and `wna_url` fields to exported datasets;
+ - updated package metadata and documentation for this fork-based maintenance workflow.
 
 ## 0.17.17 (2024-03-03)
 

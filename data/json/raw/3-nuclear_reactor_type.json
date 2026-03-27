@@ -118,5 +118,10 @@
     "Id": 25,
     "Type": "TWR",
     "Description": "Traveling-Wave Reactor"
+  },
+  {
+    "Id": 26,
+    "Type": "X",
+    "Description": "Other"
   }
 ]
