@@ -6,7 +6,7 @@ This fork is maintained from public World Nuclear Association pages.
 
 ```bash
 python -m pip install -r scripts/requirements-update.txt
-playwright install chromium
+python -m playwright install chromium
 ```
 
 ## Refresh the dataset
@@ -22,14 +22,20 @@ python -m py_compile scripts/update_from_wna.py
 git status --short
 ```
 
-Expected current release after the 2026-03-27 refresh:
+Expected current release after the 2026-08-24 refresh:
 
-- `865` reactors
-- `337` plants
-- `438` operational
-- `78` under construction
-- `125` planned
+- `867` reactors
+- `349` plants
+- `441` operational
+- `79` under construction
+- `123` planned
 - `224` shutdown
+
+Run the format and relationship checks after a refresh:
+
+```bash
+python scripts/validate_data.py
+```
 
 ## Known limitations
 
@@ -41,6 +47,6 @@ Expected current release after the 2026-03-27 refresh:
 
 ```bash
 git add .
-git commit -m "Release GeoNuclearData 0.18.0"
+git commit -m "Release GeoNuclearData 0.19.0"
 git push origin master
 ```

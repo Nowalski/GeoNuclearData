@@ -6,8 +6,8 @@ This fork is self-maintained from public World Nuclear Association pages instead
 
 ### Version
 
-Database version: **0.18.0** (**2026/03/27**)  
-Dataset last updated in version: **0.18.0** (**2026/03/27**)
+Database version: **0.19.0** (**2026/08/24**)<br>
+Dataset last updated in version: **0.19.0** (**2026/08/24**)
 
 ### Changelog
 
@@ -21,11 +21,11 @@ Data is available in multiple formats (MySQL, JSON, and CSV).
 
 | Status | Count |
 |--------|------:|
-| Planned | 125 |
-| Under Construction | 78 |
-| Operational | 438 |
+| Planned | 123 |
+| Under Construction | 79 |
+| Operational | 441 |
 | Shutdown | 224 |
-| **Total** | **865** |
+| **Total** | **867** |
 
 ## Maintenance
 
@@ -37,7 +37,7 @@ Requirements:
 - `requests`
 - `beautifulsoup4`
 - `playwright`
-- Chromium installed for Playwright via `playwright install chromium`
+- Chromium installed for Playwright via `python -m playwright install chromium`
 - optional shortcut: `python -m pip install -r scripts/requirements-update.txt`
 
 Example refresh command:
@@ -51,6 +51,7 @@ Notes:
 - Plant overlays are scraped from the visible WNA explorer pages.
 - Reactor pages are fetched individually and validated before being merged into the dataset.
 - Planned reactors without a public WNA detail page may not yet have `operator`, `reactor_type`, `reactor_model`, or `wna_url` values.
+- If a detail page is unavailable or incomplete, previously published metadata is retained where possible.
 - A short maintainer workflow is documented in [`docs/MAINTENANCE.md`](docs/MAINTENANCE.md).
 
 ## Tables structure

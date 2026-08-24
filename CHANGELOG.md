@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 0.19.0 (2026-08-24)
+
+ - refreshed the dataset from the current World Nuclear Association explorer feed and reactor detail pages;
+ - added five current WNA records, superseded three retired/project records, and increased the dataset to `867` reactors across `349` plants;
+ - updated the WNA feed endpoint used by the maintenance script;
+ - retained previously published metadata when a reactor detail page is unavailable or incomplete;
+ - added repeatable generated-data validation and refreshed SQL/documentation examples.
+
 ## 0.18.0 (2026-03-27)
 
  - refreshed the dataset from the World Nuclear Association Nuclear Power Plant Explorer and public reactor detail pages;

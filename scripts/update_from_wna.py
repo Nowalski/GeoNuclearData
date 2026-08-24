@@ -41,10 +41,10 @@ EXPLORER_URL = (
     "https://world-nuclear.org/information-library/facts-and-figures/"
     "nuclear-power-plant-explorer?plant={plant}"
 )
-EXPLORER_INDEX_URL = "https://wna-data-worker.alec-mitchell.workers.dev"
-USER_AGENT = "GeoNuclearData-Updater/0.18.0 (+https://github.com/Nowalski/GeoNuclearData)"
+EXPLORER_INDEX_URL = "https://wna-data-worker.world-nuclear.workers.dev"
+USER_AGENT = "GeoNuclearData-Updater/0.19.0 (+https://github.com/Nowalski/GeoNuclearData)"
 
-VERSION = "0.18.0"
+VERSION = "0.19.0"
 RUN_DATE = datetime.now(UTC)
 RUN_DATE_ISO = RUN_DATE.replace(microsecond=0).isoformat().replace("+00:00", "Z")
 RUN_DATE_SQL = RUN_DATE.strftime("%Y-%m-%d %H:%M:%S")
@@ -329,7 +329,10 @@ def fetch_explorer_index(session: requests.Session) -> list[dict[str, str]]:
 
 def scrape_plant_overlay(page, plant: PlantTarget) -> dict[str, Any]:
     url = EXPLORER_URL.format(plant=quote(plant.plant_name, safe=""))
-    page.goto(url, wait_until="networkidle", timeout=120_000)
+    # The explorer keeps map tiles and analytics requests open, so waiting for
+    # network idle can take minutes or time out. The explicit overlay readiness
+    # check below is the actual data dependency.
+    page.goto(url, wait_until="domcontentloaded", timeout=120_000)
     page.wait_for_function(
         """expected => {
             const overlay = document.querySelector('#plantInfoOverlay');
@@ -411,6 +414,7 @@ def parse_reactor_detail(html: str, url: str) -> dict[str, Any]:
         "details": kv,
         "aliases": aliases,
         "url": url,
+        "is_fallback": False,
     }
 
 
@@ -505,6 +509,7 @@ def fallback_reactor_detail(index_row: dict[str, str]) -> dict[str, Any]:
         "details": {},
         "aliases": [],
         "url": index_row.get("URL"),
+        "is_fallback": True,
     }
 
 
@@ -591,11 +596,7 @@ def build_rows(
         country_code = resolve_country_code(index_row["Country"], countries_by_name)
         overlay = plant_overlays[(index_row["Plant name"], index_row["Country"])]
         status_id, _ = status_from_wna(detail.get("status") or index_row.get("Status"))
-        reactor_type_id, _ = ensure_type(
-            detail["details"].get("Reactor Type"),
-            types_by_code,
-            types_by_desc,
-        )
+        details = detail.get("details") or {}
 
         existing = pick_existing_match(
             existing_by_key,
@@ -606,9 +607,34 @@ def build_rows(
             *detail.get("aliases", []),
         )
 
-        operational_from = parse_date(detail["details"].get("Commercial Operation"))
+        def value_or_existing(value: Any, field: str) -> Any:
+            if value not in (None, ""):
+                return value
+            return existing.get(field) if existing else None
+
+        reactor_type_id = None
+        if details.get("Reactor Type"):
+            reactor_type_id, _ = ensure_type(
+                details["Reactor Type"],
+                types_by_code,
+                types_by_desc,
+            )
+        elif existing:
+            # A failed or incomplete WNA detail page must not erase metadata
+            # retained from the previous release.
+            reactor_type_id = existing.get("ReactorTypeId")
+
+        operational_from = parse_date(details.get("Commercial Operation"))
         if not operational_from:
-            operational_from = parse_date(detail["details"].get("First Grid Connection"))
+            operational_from = parse_date(details.get("First Grid Connection"))
+        operational_from = value_or_existing(operational_from, "OperationalFrom")
+
+        capacity = parse_int(
+            details.get("Design Net Capacity")
+            or details.get("Capacity Net")
+            or index_row.get("Gross Capacity")
+        )
+        capacity = value_or_existing(capacity, "Capacity")
 
         raw_row = {
             "Id": assign_id(existing),
@@ -624,20 +650,22 @@ def build_rows(
             "CountryCode": country_code,
             "StatusId": status_id,
             "ReactorTypeId": reactor_type_id,
-            "ReactorModel": detail["details"].get("Model"),
-            "ConstructionStartAt": parse_date(detail["details"].get("Construction Start")),
-            "OperationalFrom": operational_from,
-            "OperationalTo": parse_date(detail["details"].get("Permanent Shutdown")),
-            "Capacity": parse_int(
-                detail["details"].get("Design Net Capacity")
-                or detail["details"].get("Capacity Net")
-                or index_row.get("Gross Capacity")
+            "ReactorModel": value_or_existing(details.get("Model"), "ReactorModel"),
+            "ConstructionStartAt": value_or_existing(
+                parse_date(details.get("Construction Start")),
+                "ConstructionStartAt",
             ),
-            "Operator": detail["details"].get("Operator"),
+            "OperationalFrom": operational_from,
+            "OperationalTo": value_or_existing(
+                parse_date(details.get("Permanent Shutdown")),
+                "OperationalTo",
+            ),
+            "Capacity": capacity,
+            "Operator": value_or_existing(details.get("Operator"), "Operator"),
             "Source": "WNA Explorer / Reactor Database",
             "LastUpdatedAt": RUN_DATE_ISO,
             "IAEAId": existing.get("IAEAId") if existing else None,
-            "WnaUrl": detail["url"] or index_row.get("URL"),
+            "WnaUrl": detail["url"] or index_row.get("URL") or (existing.get("WnaUrl") if existing else None),
         }
         raw_rows.append(raw_row)
 
@@ -849,7 +877,8 @@ def write_reactors_sql(path: Path, rows: list[dict[str, Any]]) -> None:
     ]
     for row in rows:
         sql_row = dict(row)
-        sql_row["LastUpdatedAt"] = RUN_DATE_SQL
+        if sql_row.get("LastUpdatedAt"):
+            sql_row["LastUpdatedAt"] = str(sql_row["LastUpdatedAt"]).replace("T", " ").removesuffix("Z")
         values = ", ".join(sql_value(sql_row[column]) for column in columns)
         lines.append(f"INSERT INTO `nuclear_power_plants` VALUES ({values});")
     lines.append("")

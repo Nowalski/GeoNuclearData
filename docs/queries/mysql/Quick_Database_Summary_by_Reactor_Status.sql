@@ -22,7 +22,7 @@
 --
 -- Name          : Quick_Database_Summary_by_Reactor_Status.sql
 -- Version       : 1.0.0
--- Date          : 2021/02/14
+-- Date          : 2026/08/24
 --
 -- Description   : A MySql script that can be used to generate the info under
 --                 the Quick database summary (by reactor status) section found
@@ -31,15 +31,14 @@
 -- Git repository available at https://github.com/cristianst85/GeoNuclearData
 --
 
-select s.type 'Status'
-	, count(`status_id`) 'Count'
-from nuclear_power_plants npp
-	, nuclear_power_plant_status_type s
-where npp.status_id = s.id
-group by `status_id`
+SELECT s.type AS `Status`
+    , COUNT(*) AS `Count`
+FROM nuclear_power_plants AS npp
+INNER JOIN nuclear_power_plant_status_type AS s ON npp.status_id = s.id
+GROUP BY s.id, s.type
 
-union
+UNION ALL
 
-select 'Total'
-	, count(`status_id`) 'Count'
-from nuclear_power_plants npp
+SELECT 'Total' AS `Status`
+    , COUNT(*) AS `Count`
+FROM nuclear_power_plants;

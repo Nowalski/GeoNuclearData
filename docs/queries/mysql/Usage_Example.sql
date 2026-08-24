@@ -22,7 +22,7 @@
 --
 -- Name          : Usage_Example.sql
 -- Version       : 1.0.0
--- Date          : 2021/02/14
+-- Date          : 2026/08/24
 --
 -- Description   : A simple MySql script that shows how to query data from the
 --                 GeoNuclearData database.
@@ -30,19 +30,27 @@
 -- Git repository available at https://github.com/cristianst85/GeoNuclearData
 --
 
-select npp.`id`
-	, npp.`name`
-	, npp.latitude
-	, npp.longitude
-	, c.`name` 'country'
-	, s.type 'status'
-	, r.type 'reactor_type'
-	, npp.reactor_model
-	, npp.construction_start_at
-	, npp.operational_from
-	, npp.operational_to
-from nuclear_power_plants npp
-inner join countries as c on npp.country_code = c.`code`
-inner join nuclear_power_plant_status_type as s on npp.status_id = s.id
-left outer join nuclear_reactor_type as r on npp.reactor_type_id = r.id
-order by npp.`id`
+SELECT npp.`id`
+    , npp.`name`
+    , npp.display_name
+    , npp.plant_name
+    , npp.latitude
+    , npp.longitude
+    , c.`name` AS `country`
+    , s.type AS `status`
+    , r.type AS `reactor_type`
+    , npp.reactor_model
+    , npp.construction_start_at
+    , npp.operational_from
+    , npp.operational_to
+    , npp.capacity
+    , npp.operator
+    , npp.source
+    , npp.last_updated_at
+    , npp.iaea_id
+    , npp.wna_url
+FROM nuclear_power_plants AS npp
+INNER JOIN countries AS c ON npp.country_code = c.`code`
+INNER JOIN nuclear_power_plant_status_type AS s ON npp.status_id = s.id
+LEFT JOIN nuclear_reactor_type AS r ON npp.reactor_type_id = r.id
+ORDER BY npp.`id`;
